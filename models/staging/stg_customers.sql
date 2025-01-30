@@ -6,13 +6,15 @@ raw_customers as (
 
 ),
 cleaned AS (
-    SELECT 
+    SELECT
+        id, 
         name,
         SPLIT(name, ' ') AS name_parts
     FROM raw_customers
 ),
 extracted AS (
     SELECT
+        c.id,
         c.name,
         -- Only keep alphabetic letters, remove digits & punctuation
         REGEXP_REPLACE(f.value, '[^a-zA-Z]', '') AS token_raw
@@ -22,6 +24,7 @@ extracted AS (
 ),
 filtered AS (
     SELECT
+        id,
         name,
         token_raw,
         LENGTH(token_raw) AS token_length
@@ -36,17 +39,19 @@ filtered AS (
 ),
 ranked AS (
     SELECT
+        id,
         name,
         token_raw,
         ROW_NUMBER() OVER (
-            PARTITION BY name 
+            PARTITION BY id 
             ORDER BY token_length DESC
         ) AS rn
     FROM filtered
 )
 SELECT
-    name,
+    id as CUSTOMER_ID,
+    ANY_VALUE(name) as raw_name,
     MAX(CASE WHEN rn = 1 THEN token_raw END) AS first_name,
     MAX(CASE WHEN rn = 2 THEN token_raw END) AS last_name
 FROM ranked
-GROUP BY name
+GROUP BY id
