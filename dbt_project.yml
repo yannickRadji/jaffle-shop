@@ -18,7 +18,7 @@ clean-targets:
 
 seeds:
   jaffle_shop:
-    +schema: jaffle_shop
+    +schema: seed
 
 models:
   jaffle_shop:
