@@ -16,12 +16,9 @@ clean-targets:
   - "target"
   - "dbt_packages"
 
-vars:
-  "dbt_date:time_zone": "America/Los_Angeles"
-
 seeds:
   jaffle_shop:
-    +schema: raw
+    +schema: jaffle_shop
 
 models:
   jaffle_shop:
