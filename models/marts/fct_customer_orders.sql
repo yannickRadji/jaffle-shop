@@ -33,29 +33,24 @@ paid_orders as (
     from orders
     left join finalized_orders on orders.id = finalized_orders.order_id
     left join customers on orders.user_id = customers.id
-),
-
-customer_orders 
-as (select C.ID as customer_id
-    , min(ORDER_DATE) as first_order_date
-    , max(ORDER_DATE) as most_recent_order_date
-    , count(ORDERS.ID) AS number_of_orders
-from customers C 
-left join orders
-on orders.USER_ID = C.ID 
-group by 1)
-
-
+)
 
 select
     paid_orders.*,
+
     ROW_NUMBER() OVER (ORDER BY paid_orders.order_id) as transaction_seq,
     ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY paid_orders.order_id) as customer_sales_seq,
-    CASE WHEN c.first_order_date = paid_orders.order_placed_at
+
+    min(paid_orders.order_placed_at) OVER (PARTITION by customer_id ) as first_order_date,
+
+    CASE WHEN first_order_date = paid_orders.order_placed_at
     THEN 'new'
     ELSE 'return' END as nvsr,
+    
     sum(paid_orders.total_amount_paid) OVER (PARTITION BY paid_orders.customer_id order by paid_orders.order_id) as customer_lifetime_value,
-    c.first_order_date as fdos
+    
+    first_order_date as fdos
+    
 FROM paid_orders
 left join customer_orders as c USING (customer_id)
 ORDER BY order_id
