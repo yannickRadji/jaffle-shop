@@ -1,38 +1,38 @@
 with orders as (
-    select * from {{ source("jaffle_shop", "orders") }}
+    select * from {{ ref("stg_jaffle_shop__orders") }}
 ),
 
 payments as (
-    select * from {{ source("jaffle_shop", "stripe_payments") }}
+    select * from {{ ref('stg_stripe__payments') }}
 ),
 
 customers as (
-    select * from {{ source("jaffle_shop", "customers") }}
+    select * from {{ ref("stg_jaffle_shop__customers") }}
 ),
 
 finalized_orders as (
     select 
-        orderid as order_id, max(created) as payment_finalized_date, sum(amount) / 100.0 as total_amount_paid
-    from Payments
-    where status <> 'fail'
+        order_id, max(payment_created_at) as payment_finalized_date, sum(payment_amount) as total_amount_paid
+    from payments
+    where payment_status <> 'fail'
     group by 1
 ),
 
 paid_orders as (
     select 
-        orders.id as order_id,
-        orders.user_id	as customer_id,
-        orders.order_date AS order_placed_at,
-        orders.status AS order_status,
+        orders.order_id,
+        orders.customer_id,
+        orders.order_placed_at,
+        orders.order_status,
 
         finalized_orders.total_amount_paid,
         finalized_orders.payment_finalized_date,
 
-        customers.first_name as customer_first_name,
-        customers.last_name as customer_last_name
+        customers.customer_first_name,
+        customers.customer_last_name
     from orders
-    left join finalized_orders on orders.id = finalized_orders.order_id
-    left join customers on orders.user_id = customers.id
+    left join finalized_orders on orders.order_id = finalized_orders.order_id
+    left join customers on orders.customer_id = customers.customer_id
 ),
 
 final as (
