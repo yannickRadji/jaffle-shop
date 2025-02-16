@@ -10,6 +10,9 @@ models:
         data_tests:
           - not_null
           - unique
+          - dbt_utils.cardinality_equality:
+              field: customer_id
+              to: ref('stg_customers')
       - name: customer_name
         description: Customers' full name.
       - name: count_lifetime_orders
